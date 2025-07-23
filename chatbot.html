@@ -1,0 +1,177 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CyberGuard AI - Security Assistant</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://cdn.jsdelivr.net/npm/remixicon@4.5.0/fonts/remixicon.css" rel="stylesheet" />
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        primary: "#3B82F6",
+                        secondary: "#1E293B",
+                    }
+                }
+            }
+        };
+    </script>
+</head>
+<body class="bg-[#111827] min-h-screen text-gray-100">
+    <div class="container mx-auto px-4 py-8">
+        <div class="flex justify-between items-center mb-8">
+            <div class="flex items-center gap-3">
+                <div class="w-10 h-10 bg-primary rounded-full flex items-center justify-center">
+                    <i class="ri-shield-line text-2xl"></i>
+                </div>
+                <h1 class="text-2xl font-bold">AI Security Assistant</h1>
+            </div>
+            <a href="cyber.html" class="bg-primary px-4 py-2 rounded hover:bg-blue-600 transition-colors flex items-center gap-2">
+                <i class="ri-arrow-left-line"></i>
+                Back to Dashboard
+            </a>
+        </div>
+
+        <div class="bg-[#1F2937] rounded-lg shadow-lg overflow-hidden max-w-4xl mx-auto">
+            <!-- Chat Messages Container -->
+            <div id="chatMessages" class="h-[calc(100vh-300px)] overflow-y-auto p-6 space-y-6">
+                <!-- Welcome Message -->
+                <div class="flex items-start gap-4">
+                    <div class="w-10 h-10 bg-primary rounded-full flex items-center justify-center flex-shrink-0">
+                        <i class="ri-robot-line text-xl"></i>
+                    </div>
+                    <div class="bg-[#374151] p-4 rounded-lg max-w-[80%] shadow-md">
+                        <p class="text-gray-100">Hello! I'm your AI Security Assistant. I can help you with:</p>
+                        <ul class="mt-2 space-y-1 text-gray-300 list-disc list-inside">
+                            <li>Security best practices</li>
+                            <li>Vulnerability assessments</li>
+                            <li>Security configurations</li>
+                            <li>Threat analysis</li>
+                            <li>Security recommendations</li>
+                        </ul>
+                        <p class="mt-2 text-gray-300">How can I assist you with cybersecurity today?</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Input Area -->
+            <div class="p-6 border-t border-gray-700">
+                <form id="chatForm" class="flex gap-4" onsubmit="handleSubmit(event)">
+                    <div class="flex-1 relative">
+                        <input
+                            type="text"
+                            id="messageInput"
+                            placeholder="Type your security question..."
+                            class="w-full bg-[#111827] border-2 border-gray-700 rounded-lg px-4 py-3 text-gray-100 placeholder-gray-400 focus:outline-none focus:border-primary transition-colors"
+                            autocomplete="off"
+                        />
+                        <div id="typingIndicator" class="absolute left-4 bottom-0 translate-y-[120%] hidden">
+                            <div class="flex items-center gap-2 text-sm text-gray-400">
+                                <div class="w-2 h-2 bg-primary rounded-full animate-bounce"></div>
+                                <div class="w-2 h-2 bg-primary rounded-full animate-bounce" style="animation-delay: 0.2s"></div>
+                                <div class="w-2 h-2 bg-primary rounded-full animate-bounce" style="animation-delay: 0.4s"></div>
+                            </div>
+                        </div>
+                    </div>
+                    <button
+                        type="submit"
+                        class="bg-primary hover:bg-blue-600 px-6 py-3 rounded-lg transition-colors flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
+                        id="sendButton"
+                    >
+                        <span>Send</span>
+                        <i class="ri-send-plane-fill"></i>
+                    </button>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let isProcessing = false;
+
+        function addMessage(message, isUser = false) {
+            const chatMessages = document.getElementById('chatMessages');
+            const messageDiv = document.createElement('div');
+            messageDiv.className = `flex items-start gap-4 ${isUser ? 'flex-row-reverse' : ''}`;
+            
+            const iconClass = isUser ? 'ri-user-line' : 'ri-robot-line';
+            const bgColor = isUser ? 'bg-primary' : 'bg-[#374151]';
+            
+            messageDiv.innerHTML = `
+                <div class="w-10 h-10 ${isUser ? 'bg-gray-700' : 'bg-primary'} rounded-full flex items-center justify-center flex-shrink-0">
+                    <i class="${iconClass} text-xl"></i>
+                </div>
+                <div class="${bgColor} p-4 rounded-lg max-w-[80%] shadow-md">
+                    <p class="text-gray-100 whitespace-pre-wrap">${message}</p>
+                </div>
+            `;
+            
+            chatMessages.appendChild(messageDiv);
+            chatMessages.scrollTop = chatMessages.scrollHeight;
+        }
+
+        function setLoading(loading) {
+            const sendButton = document.getElementById('sendButton');
+            const typingIndicator = document.getElementById('typingIndicator');
+            const messageInput = document.getElementById('messageInput');
+            
+            isProcessing = loading;
+            sendButton.disabled = loading;
+            messageInput.disabled = loading;
+            typingIndicator.classList.toggle('hidden', !loading);
+        }
+
+        async function handleSubmit(event, overrideMessage = null) {
+            if (event) event.preventDefault();
+            if (isProcessing) return;
+            const input = document.getElementById('messageInput');
+            const message = overrideMessage !== null ? overrideMessage : input.value.trim();
+            if (!message) return;
+            addMessage(message, true);
+            if (!overrideMessage) input.value = '';
+            setLoading(true);
+            try {
+                const response = await fetch('/api/chat', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({ message }),
+                });
+                const data = await response.json();
+                if (data.error) {
+                    throw new Error(data.error);
+                }
+                addMessage(data.response);
+            } catch (error) {
+                console.error('Error:', error);
+                addMessage('Sorry, I encountered an error. Please try again or rephrase your question.');
+            } finally {
+                setLoading(false);
+            }
+        }
+
+        // Handle Enter key press
+        document.getElementById('messageInput').addEventListener('keypress', function(e) {
+            if (e.key === 'Enter' && !e.shiftKey) {
+                e.preventDefault();
+                handleSubmit(e);
+            }
+        });
+
+        // Auto-send if q param is present
+        document.addEventListener('DOMContentLoaded', () => {
+            const params = new URLSearchParams(window.location.search);
+            const q = params.get('q');
+            if (q) {
+                const decoded = decodeURIComponent(q);
+                const input = document.getElementById('messageInput');
+                input.value = decoded;
+                handleSubmit(null, decoded);
+            }
+        });
+    </script>
+</body>
+</html> 

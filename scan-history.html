@@ -1,0 +1,263 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CyberGuard AI - Scan History</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://cdn.jsdelivr.net/npm/remixicon@4.5.0/fonts/remixicon.css" rel="stylesheet" />
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        primary: "#3B82F6",
+                        secondary: "#1E293B",
+                    }
+                }
+            }
+        };
+    </script>
+</head>
+<body class="bg-[#111827] min-h-screen text-gray-100">
+    <div class="container mx-auto px-4 py-8">
+        <div class="flex justify-between items-center mb-8">
+            <h1 class="text-2xl font-bold">Scan History</h1>
+            <button id="refreshHistoryBtn" class="bg-primary px-4 py-2 rounded hover:bg-blue-600 transition-colors">Refresh</button>
+            <a href="cyber.html" class="bg-primary px-4 py-2 rounded hover:bg-blue-600 transition-colors">
+                <i class="ri-arrow-left-line mr-2"></i>Back to Dashboard
+            </a>
+        </div>
+
+        <div class="bg-[#1F2937] rounded-lg p-6">
+            <!-- Search and Filter Section -->
+            <div class="mb-6 flex gap-4">
+                <input type="text" 
+                    id="searchInput" 
+                    placeholder="Search by URL..." 
+                    class="flex-1 bg-[#111827] border-none rounded px-4 py-2 text-gray-100 placeholder-gray-400">
+                <select id="statusFilter" class="bg-[#111827] border-none rounded px-4 py-2 text-gray-100">
+                    <option value="">All Status</option>
+                    <option value="completed">Completed</option>
+                    <option value="in-progress">In Progress</option>
+                    <option value="failed">Failed</option>
+                </select>
+                <select id="typeFilter" class="bg-[#111827] border-none rounded px-4 py-2 text-gray-100">
+                    <option value="">All Types</option>
+                    <option value="passive">Passive</option>
+                    <option value="active">Active</option>
+                </select>
+            </div>
+
+            <div class="overflow-x-auto">
+                <table class="w-full">
+                    <thead>
+                        <tr class="text-left border-b border-gray-700">
+                            <th class="pb-4 px-4">Scan Date</th>
+                            <th class="pb-4 px-4">URL</th>
+                            <th class="pb-4 px-4">Scan Type</th>
+                            <th class="pb-4 px-4">Status</th>
+                            <th class="pb-4 px-4">Total Alerts</th>
+                            <th class="pb-4 px-4">System Health</th>
+                            <th class="pb-4 px-4">Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody id="scanHistoryTable">
+                        <!-- Scan history will be dynamically inserted here -->
+                        <tr>
+                            <td colspan="7" class="py-4 px-4 text-center text-gray-400">
+                                Loading scan history...
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+
+            <!-- Pagination -->
+            <div class="mt-6 flex justify-between items-center">
+                <div class="text-gray-400">
+                    <span id="totalScans">0</span> scans found
+                </div>
+                <div class="flex gap-2">
+                    <button id="prevPage" class="px-4 py-2 bg-[#111827] rounded disabled:opacity-50">
+                        <i class="ri-arrow-left-line"></i>
+                    </button>
+                    <span id="pageInfo" class="px-4 py-2">Page 1</span>
+                    <button id="nextPage" class="px-4 py-2 bg-[#111827] rounded disabled:opacity-50">
+                        <i class="ri-arrow-right-line"></i>
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let allScans = [];
+        let currentPage = 1;
+        const itemsPerPage = 10;
+        let filteredScans = [];
+
+        async function fetchScanHistory() {
+            try {
+                const response = await fetch('/api/scans');
+                if (!response.ok) {
+                    throw new Error('Failed to fetch scan history');
+                }
+
+                allScans = await response.json();
+                filteredScans = [...allScans];
+                updateTable();
+                document.getElementById('totalScans').textContent = allScans.length;
+            } catch (error) {
+                console.error('Error:', error);
+                document.getElementById('scanHistoryTable').innerHTML = `
+                    <tr>
+                        <td colspan="7" class="py-4 px-4 text-center text-red-400">
+                            Error loading scan history. Please try again.
+                        </td>
+                    </tr>
+                `;
+            }
+        }
+
+        function updateTable() {
+            const startIndex = (currentPage - 1) * itemsPerPage;
+            const endIndex = startIndex + itemsPerPage;
+            const currentScans = filteredScans.slice(startIndex, endIndex);
+            const tableBody = document.getElementById('scanHistoryTable');
+            
+            if (currentScans.length === 0) {
+                tableBody.innerHTML = `
+                    <tr>
+                        <td colspan="7" class="py-4 px-4 text-center text-gray-400">
+                            No scan history available
+                        </td>
+                    </tr>
+                `;
+                return;
+            }
+
+            tableBody.innerHTML = currentScans.map(scan => `
+                <tr class="border-b border-gray-700">
+                    <td class="py-4 px-4">${new Date(scan.scanDate).toLocaleString()}</td>
+                    <td class="py-4 px-4">${scan.url}</td>
+                    <td class="py-4 px-4">
+                        <span class="capitalize ${scan.scanType === 'active' ? 'text-yellow-400' : 'text-blue-400'}">
+                            ${scan.scanType}
+                        </span>
+                    </td>
+                    <td class="py-4 px-4">
+                        <span class="px-2 py-1 rounded text-sm ${getStatusClass(scan.status)}">
+                            ${scan.status}
+                        </span>
+                    </td>
+                    <td class="py-4 px-4">${scan.results?.totalAlerts || 0}</td>
+                    <td class="py-4 px-4">
+                        <div class="flex items-center gap-2">
+                            <div class="w-16 bg-gray-700 rounded-full h-2">
+                                <div class="bg-primary rounded-full h-2" style="width: ${scan.systemHealth?.score || 0}%"></div>
+                            </div>
+                            <span>${scan.systemHealth?.score || 0}%</span>
+                        </div>
+                    </td>
+                    <td class="py-4 px-4">
+                        <div class="flex gap-2">
+                            ${scan.status === 'completed' ? `
+                                <button onclick="window.location.href='detailed-alerts.html?scanId=${scan._id}'"
+                                    class="text-primary hover:text-blue-400 transition-colors">
+                                    <i class="ri-file-list-line mr-1"></i>Details
+                                </button>
+                                <button onclick="window.location.href='/api/download-alerts/${scan._id}'"
+                                    class="text-primary hover:text-blue-400 transition-colors">
+                                    <i class="ri-download-line mr-1"></i>PDF
+                                </button>
+                            ` : ''}
+                        </div>
+                    </td>
+                </tr>
+            `).join('');
+
+            // Update pagination
+            updatePagination();
+        }
+
+        function updatePagination() {
+            const totalPages = Math.ceil(filteredScans.length / itemsPerPage);
+            document.getElementById('pageInfo').textContent = `Page ${currentPage} of ${totalPages}`;
+            document.getElementById('prevPage').disabled = currentPage === 1;
+            document.getElementById('nextPage').disabled = currentPage === totalPages;
+        }
+
+        function getStatusClass(status) {
+            switch (status) {
+                case 'completed':
+                    return 'bg-green-500/20 text-green-500';
+                case 'in-progress':
+                    return 'bg-blue-500/20 text-blue-500';
+                case 'failed':
+                    return 'bg-red-500/20 text-red-500';
+                default:
+                    return 'bg-gray-500/20 text-gray-400';
+            }
+        }
+
+        // Event Listeners
+        document.getElementById('prevPage').addEventListener('click', () => {
+            if (currentPage > 1) {
+                currentPage--;
+                updateTable();
+            }
+        });
+
+        document.getElementById('nextPage').addEventListener('click', () => {
+            const totalPages = Math.ceil(filteredScans.length / itemsPerPage);
+            if (currentPage < totalPages) {
+                currentPage++;
+                updateTable();
+            }
+        });
+
+        document.getElementById('searchInput').addEventListener('input', (e) => {
+            const searchTerm = e.target.value.toLowerCase();
+            filterScans();
+        });
+
+        document.getElementById('statusFilter').addEventListener('change', () => {
+            filterScans();
+        });
+
+        document.getElementById('typeFilter').addEventListener('change', () => {
+            filterScans();
+        });
+
+        function filterScans() {
+            const searchTerm = document.getElementById('searchInput').value.toLowerCase();
+            const statusFilter = document.getElementById('statusFilter').value;
+            const typeFilter = document.getElementById('typeFilter').value;
+
+            filteredScans = allScans.filter(scan => {
+                const matchesSearch = scan.url.toLowerCase().includes(searchTerm);
+                const matchesStatus = !statusFilter || scan.status === statusFilter;
+                const matchesType = !typeFilter || scan.scanType === typeFilter;
+                return matchesSearch && matchesStatus && matchesType;
+            });
+
+            currentPage = 1;
+            updateTable();
+            document.getElementById('totalScans').textContent = filteredScans.length;
+        }
+
+        document.getElementById('refreshHistoryBtn').addEventListener('click', () => {
+            fetchScanHistory();
+        });
+
+        // Auto-refresh every 5 seconds for real-time updates
+        setInterval(() => {
+            fetchScanHistory();
+        }, 5000);
+
+        // Initial load
+        fetchScanHistory();
+    </script>
+</body>
+</html> 

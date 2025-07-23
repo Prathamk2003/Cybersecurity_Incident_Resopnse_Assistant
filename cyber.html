@@ -1,0 +1,884 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>CyberGuard AI - Security Dashboard</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link
+      href="https://cdn.jsdelivr.net/npm/remixicon@4.5.0/fonts/remixicon.css"
+      rel="stylesheet"
+    />
+    <style>
+      :where([class^="ri-"])::before { content: "\f3c2"; }
+      .scan-type-selection {
+        margin: 10px 0;
+      }
+      #scanType {
+        width: 100%;
+        padding: 10px;
+        border: 1px solid #ddd;
+        border-radius: 4px;
+        background-color: white;
+        font-size: 16px;
+      }
+      #scanType:focus {
+        outline: none;
+        border-color: #4CAF50;
+      }
+      .view-all-button {
+        display: block;
+        margin: 20px auto;
+        padding: 10px 20px;
+        background-color: #007bff;
+        color: white;
+        border: none;
+        border-radius: 4px;
+        cursor: pointer;
+        font-size: 16px;
+      }
+      .view-all-button:hover {
+        background-color: #0056b3;
+      }
+    </style>
+    <script>
+      tailwind.config = {
+        theme: {
+          extend: {
+            colors: {
+              primary: "#3B82F6",
+              secondary: "#1E293B",
+            },
+            borderRadius: {
+              none: "0px",
+              sm: "4px",
+              DEFAULT: "8px",
+              md: "12px",
+              lg: "16px",
+              xl: "20px",
+              "2xl": "24px",
+              "3xl": "32px",
+              full: "9999px",
+              button: "8px",
+            },
+          },
+        },
+      };
+    </script>
+  </head>
+  <body class="bg-[#111827] min-h-screen text-gray-100">
+    <div class="flex min-h-screen">
+      <aside class="w-64 bg-[#1F2937] p-6 flex flex-col gap-4">
+        <div class="flex items-center gap-2 mb-8">
+          <div class="w-8 h-8 flex items-center justify-center">
+            <i class="ri-shield-line text-primary text-2xl"></i>
+          </div>
+          <span class="text-xl font-semibold">FalconCyber Scan</span>
+        </div>
+        <nav class="flex flex-col gap-2">
+          <a
+            href="#"
+            class="flex items-center gap-3 p-3 bg-primary rounded text-white"
+          >
+            <div class="w-5 h-5 flex items-center justify-center">
+              <i class="ri-dashboard-line"></i>
+            </div>
+            <span>Dashboard</span>
+          </a>
+          <a
+            href="scan-history.html"
+            target="_blank"
+            class="flex items-center gap-3 p-3 text-gray-400 hover:bg-[#374151] rounded transition-colors"
+          >
+            <div class="w-5 h-5 flex items-center justify-center">
+              <i class="ri-scan-line"></i>
+            </div>
+            <span>Scan History</span>
+          </a>
+          <a
+            href="#newsSection"
+            onclick="scrollToNews(event)"
+            class="flex items-center gap-3 p-3 text-gray-400 hover:bg-[#374151] rounded transition-colors"
+          >
+            <div class="w-5 h-5 flex items-center justify-center">
+              <i class="ri-newspaper-line"></i>
+            </div>
+            <span>News Feed</span>
+          </a>
+          <a
+            href="#"
+            class="flex items-center gap-3 p-3 text-gray-400 hover:bg-[#374151] rounded transition-colors"
+          >
+            <div class="w-5 h-5 flex items-center justify-center">
+              <i class="ri-settings-line"></i>
+            </div>
+            <span>Settings</span>
+          </a>
+        </nav>
+      </aside>
+      <main class="flex-1 p-8">
+        <div class="flex items-center justify-between mb-8">
+          <h1 class="text-2xl">Welcome back, <span id="userName"></span></h1>
+          <div class="flex items-center gap-4">
+            <button class="bg-primary px-4 py-2 rounded-button">
+              Upgrade Plan
+            </button>
+            <a href="chatbot.html" class="bg-secondary px-4 py-2 rounded-button flex items-center gap-2">
+              <i class="ri-robot-line"></i>
+              AI Assistant
+            </a>
+            <div class="relative" id="userMenu">
+              <div class="w-10 h-10 bg-gray-700 rounded-full flex items-center justify-center cursor-pointer" onclick="toggleUserMenu()">
+                <i class="ri-user-line text-xl"></i>
+              </div>
+              <div id="userDropdown" class="absolute right-0 mt-2 w-48 bg-[#1F2937] rounded-lg shadow-lg py-2 hidden">
+                <button onclick="handleLogout()" class="w-full px-4 py-2 text-left text-gray-400 hover:bg-[#374151] hover:text-white transition-colors">
+                  <i class="ri-logout-box-line mr-2"></i>Logout
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div class="flex justify-between items-center mb-8">
+          <button id="refreshDashboardBtn" class="bg-primary px-4 py-2 rounded hover:bg-blue-600 transition-colors">Refresh</button>
+        </div>
+        <div class="scan-section bg-[#1F2937] p-6 rounded-lg mb-8">
+            <h2 class="text-xl font-semibold mb-4">Website Security Scanner</h2>
+            <div class="scan-form flex items-center gap-4">
+                <input 
+                    type="text" 
+                    id="urlInput" 
+                    placeholder="Enter website URL to scan" 
+                    class="flex-1 bg-[#111827] border-none rounded px-4 py-3 text-gray-100 placeholder-gray-400"
+                    required
+                >
+                <button 
+                    onclick="startScanWithType('passive')" 
+                    class="bg-primary hover:bg-blue-600 px-6 py-3 rounded-button whitespace-nowrap transition-colors"
+                >
+                    Passive Scan
+                </button>
+                <button 
+                    onclick="startScanWithType('active')" 
+                    class="bg-primary hover:bg-blue-600 px-6 py-3 rounded-button whitespace-nowrap transition-colors"
+                >
+                    Active Scan
+                </button>
+            </div>
+            <div id="scanStatus" class="mt-4" style="display: none;">
+                <div class="flex items-center justify-between mb-2">
+                    <p id="scanStatusText" class="text-gray-400">Scan in progress...</p>
+                    <span id="scanProgressPercent" class="text-gray-400">0%</span>
+                </div>
+                <div class="progress-container bg-[#111827] rounded h-2 overflow-hidden">
+                    <div id="progressBar" class="progress-bar bg-primary h-full w-0 transition-all duration-300"></div>
+                </div>
+                <p id="scanStageText" class="text-gray-400 mt-2 text-sm">Initializing scan...</p>
+            </div>
+            <div id="scanResults" class="mt-4"></div>
+        </div>
+        <div class="grid grid-cols-4 gap-6 mb-8">
+          <div class="bg-[#1F2937] p-6 rounded-lg">
+            <div class="flex justify-between items-start mb-4">
+              <h3 class="text-2xl font-bold" id="totalScans">0</h3>
+              <span class="text-gray-500" id="scanChange">0%</span>
+            </div>
+            <p class="text-gray-400">Total Scans</p>
+            <p class="text-sm text-gray-500 mt-2">From previous month</p>
+          </div>
+          <div class="bg-[#1F2937] p-6 rounded-lg">
+            <div class="flex justify-between items-start mb-4">
+              <h3 class="text-2xl font-bold" id="activeThreats">0</h3>
+              <span class="text-green-500" id="threatStatus">Safe</span>
+            </div>
+            <p class="text-gray-400">Active Threats</p>
+            <p class="text-sm text-gray-500 mt-2" id="threatDetails">No recent scans</p>
+          </div>
+          <div class="bg-[#1F2937] p-6 rounded-lg">
+            <div class="flex justify-between items-start mb-4">
+              <h3 class="text-2xl font-bold" id="systemHealth">0%</h3>
+              <span class="text-gray-500" id="healthStatus">No Data</span>
+            </div>
+            <p class="text-gray-400">System Health</p>
+            <p class="text-sm text-gray-500 mt-2" id="healthDetails">No system data available</p>
+          </div>
+          <div class="bg-[#1F2937] p-6 rounded-lg">
+            <div class="flex justify-between items-start mb-4">
+              <h3 class="text-2xl font-bold" id="totalAlerts">0</h3>
+              <span class="text-blue-500">Active</span>
+            </div>
+            <p class="text-gray-400">Security Alerts</p>
+            <p class="text-sm text-gray-500 mt-2" id="alertDetails">No alerts detected</p>
+          </div>
+        </div>
+        <div id="alertsSection" class="bg-[#1F2937] p-6 rounded-lg mb-8 hidden">
+          <div class="flex justify-between items-center mb-6">
+            <h2 class="text-xl font-semibold">Recent Scan Alerts</h2>
+            <div class="text-sm text-gray-400">
+              <span id="scanTimestamp"></span>
+              <span id="scanUrl" class="ml-2"></span>
+            </div>
+          </div>
+          <div id="alertsList" class="space-y-4">
+            <!-- Alerts will be inserted here -->
+          </div>
+        </div>
+        <div class="mb-8" id="newsSection">
+          <h2 class="text-xl font-semibold mb-6">Latest Security News</h2>
+          <div id="newsContainer" class="grid grid-cols-3 gap-6">
+            <!-- News articles will be dynamically inserted here -->
+            <div class="animate-pulse bg-[#1E293B] rounded-lg overflow-hidden">
+              <div class="w-full h-48 bg-gray-700"></div>
+              <div class="p-6">
+                <div class="h-6 bg-gray-700 rounded mb-2"></div>
+                <div class="h-4 bg-gray-700 rounded"></div>
+              </div>
+            </div>
+            <div class="animate-pulse bg-[#1E293B] rounded-lg overflow-hidden">
+              <div class="w-full h-48 bg-gray-700"></div>
+              <div class="p-6">
+                <div class="h-6 bg-gray-700 rounded mb-2"></div>
+                <div class="h-4 bg-gray-700 rounded"></div>
+              </div>
+            </div>
+            <div class="animate-pulse bg-[#1E293B] rounded-lg overflow-hidden">
+              <div class="w-full h-48 bg-gray-700"></div>
+              <div class="p-6">
+                <div class="h-6 bg-gray-700 rounded mb-2"></div>
+                <div class="h-4 bg-gray-700 rounded"></div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </main>
+    </div>
+    <script>
+      // Add toggle function for user menu
+      function toggleUserMenu(event) {
+        if (event) {
+          event.stopPropagation();
+        }
+        const dropdown = document.getElementById('userDropdown');
+        dropdown.classList.toggle('hidden');
+      }
+
+      // Close dropdown when clicking outside
+      document.addEventListener('click', function(event) {
+        const userMenu = document.getElementById('userMenu');
+        const dropdown = document.getElementById('userDropdown');
+        
+        if (!userMenu.contains(event.target)) {
+          dropdown.classList.add('hidden');
+        }
+      });
+
+      async function fetchUserData() {
+        try {
+          // First try to get the name from sessionStorage for immediate display
+          const storedName = sessionStorage.getItem('userName');
+          if (storedName) {
+            document.getElementById('userName').textContent = storedName;
+          }
+
+          // Still fetch from server to ensure data is up to date
+          const response = await fetch('/api/user');
+          if (response.ok) {
+            const data = await response.json();
+            document.getElementById('userName').textContent = data.name;
+            sessionStorage.setItem('userName', data.name);
+          } else {
+            window.location.href = '/login.html';
+          }
+        } catch (error) {
+          console.error('Error fetching user data:', error);
+          window.location.href = '/login.html';
+        }
+      }
+
+      // Clear sessionStorage on logout
+      async function handleLogout(event) {
+        if (event) {
+          event.stopPropagation();
+        }
+        try {
+          const response = await fetch('/api/logout', {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+            },
+          });
+
+          if (response.ok) {
+            sessionStorage.clear();
+            window.location.href = '/login.html';
+          } else {
+            alert('Logout failed');
+          }
+        } catch (error) {
+          alert('An error occurred. Please try again.');
+        }
+      }
+
+      document.addEventListener('DOMContentLoaded', fetchUserData);
+    </script>
+    <script>
+      let currentScanId = null;
+      let scanCheckInterval = null;
+
+      async function startScanWithType(scanType) {
+        const urlInput = document.getElementById('urlInput');
+        const url = urlInput.value.trim();
+
+        if (!url) {
+          alert('Please enter a URL');
+          return;
+        }
+
+        try {
+          // Show scan status
+          const scanStatus = document.getElementById('scanStatus');
+          const progressBar = document.getElementById('progressBar');
+          const progressPercent = document.getElementById('scanProgressPercent');
+          const scanStageText = document.getElementById('scanStageText');
+          
+          scanStatus.style.display = 'block';
+          progressBar.style.width = '0%';
+          progressPercent.textContent = '0%';
+          scanStageText.textContent = 'Initializing scan...';
+          document.getElementById('scanResults').innerHTML = '';
+          
+          // Start scan
+          const response = await fetch('/api/scan', {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({ url, scanType })
+          });
+
+          if (!response.ok) {
+            throw new Error('Failed to start scan');
+          }
+
+          const data = await response.json();
+          currentScanId = data.scanId;
+
+          // Poll for scan status
+          pollScanStatus(currentScanId);
+        } catch (error) {
+          console.error('Error:', error);
+          document.getElementById('scanStatus').style.display = 'none';
+          document.getElementById('scanResults').innerHTML = `
+            <div class="error-message text-red-500 mt-4">
+                Error starting scan: ${error.message}
+            </div>
+          `;
+        }
+      }
+
+      function resetScanUI() {
+        document.getElementById('scanProgress').classList.add('hidden');
+        document.getElementById('scanButton').disabled = false;
+        document.getElementById('scanUrl').disabled = false;
+      }
+
+      function startScanStatusCheck() {
+        if (scanCheckInterval) {
+          clearInterval(scanCheckInterval);
+        }
+
+        scanCheckInterval = setInterval(checkScanStatus, 5000);
+      }
+
+      async function checkScanStatus() {
+        if (!currentScanId) return;
+
+        try {
+          const response = await fetch(`/api/scan/${currentScanId}`);
+          const scan = await response.json();
+
+          if (scan.status === 'completed') {
+            clearInterval(scanCheckInterval);
+            updateDashboard(scan);
+            resetScanUI();
+          } else if (scan.status === 'failed') {
+            clearInterval(scanCheckInterval);
+            alert('Scan failed. Please try again.');
+            resetScanUI();
+          }
+        } catch (error) {
+          console.error('Error checking scan status:', error);
+        }
+      }
+
+      function updateDashboard(scan) {
+        // Update metrics
+        document.getElementById('totalScans').textContent = '1';
+        document.getElementById('scanChange').textContent = '+100%';
+        
+        document.getElementById('activeThreats').textContent = scan.results.criticalAlerts;
+        document.getElementById('threatStatus').textContent = 
+          scan.results.criticalAlerts > 0 ? 'Critical' : 'Safe';
+        
+        document.getElementById('systemHealth').textContent = 
+          scan.systemHealth.score.toFixed(1) + '%';
+        document.getElementById('healthStatus').textContent = 
+          scan.systemHealth.status;
+        
+        document.getElementById('totalAlerts').textContent = 
+          scan.results.totalAlerts;
+
+        // Show alerts section
+        const alertsSection = document.getElementById('alertsSection');
+        const alertsList = document.getElementById('alertsList');
+        alertsSection.classList.remove('hidden');
+        alertsList.innerHTML = ''; // Clear existing alerts
+
+        // Add alerts
+        scan.results.alerts.forEach(alert => {
+          const alertElement = document.createElement('div');
+          alertElement.className = 'bg-[#111827] p-4 rounded';
+          alertElement.innerHTML = `
+            <div class="flex items-center justify-between mb-2">
+              <h3 class="font-semibold">${alert.name}</h3>
+              <span class="px-2 py-1 rounded text-sm ${getRiskClass(alert.risk)}">${alert.risk}</span>
+            </div>
+            <p class="text-gray-400 text-sm mb-2">${alert.description}</p>
+            <div class="text-sm">
+              <p class="text-primary">Solution:</p>
+              <p class="text-gray-400">${alert.solution}</p>
+            </div>
+          `;
+          alertsList.appendChild(alertElement);
+        });
+      }
+
+      function getRiskClass(risk) {
+        switch (risk.toLowerCase()) {
+          case 'high':
+            return 'bg-red-500/20 text-red-500';
+          case 'medium':
+            return 'bg-yellow-500/20 text-yellow-500';
+          case 'low':
+            return 'bg-blue-500/20 text-blue-500';
+          default:
+            return 'bg-gray-500/20 text-gray-400';
+        }
+      }
+    </script>
+    <script>
+      // Add function to fetch and display recent alerts
+      async function fetchRecentAlerts() {
+        try {
+          const response = await fetch('/api/recent-alerts');
+          if (!response.ok) {
+            throw new Error('Failed to fetch recent alerts');
+          }
+
+          const data = await response.json();
+          
+          if (data.alerts && data.alerts.length > 0) {
+            // Show alerts section
+            const alertsSection = document.getElementById('alertsSection');
+            const alertsList = document.getElementById('alertsList');
+            alertsSection.classList.remove('hidden');
+            alertsList.innerHTML = ''; // Clear existing alerts
+
+            // Update timestamp and URL
+            const scanDate = new Date(data.scanDate);
+            document.getElementById('scanTimestamp').textContent = 
+                `Last scan: ${scanDate.toLocaleString()}`;
+            document.getElementById('scanUrl').textContent = 
+                `URL: ${data.url}`;
+
+            // Add alerts (limited to 5 and sorted by severity)
+            data.alerts.forEach(alert => {
+                const alertElement = document.createElement('div');
+                alertElement.className = 'bg-[#111827] p-4 rounded mb-4';
+                alertElement.innerHTML = `
+                    <div class="flex items-center justify-between mb-2">
+                        <h3 class="font-semibold">${alert.name}</h3>
+                        <span class="px-2 py-1 rounded text-sm ${getRiskClass(alert.risk)}">${alert.risk}</span>
+                    </div>
+                    <p class="text-gray-400 text-sm mb-2">${alert.description}</p>
+                    <div class="text-sm">
+                        <p class="text-primary">Solution:</p>
+                        <p class="text-gray-400">${alert.solution}</p>
+                    </div>
+                    <button class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded mt-4 ask-ai-btn">Ask AI</button>
+                `;
+                alertsList.appendChild(alertElement);
+
+                // Add event listener for Ask AI button
+                const askAiBtn = alertElement.querySelector('.ask-ai-btn');
+                askAiBtn.addEventListener('click', () => {
+                    const aiMessage = encodeURIComponent(`${alert.name}: ${alert.description}`);
+                    window.location.href = `chatbot.html?q=${aiMessage}`;
+                });
+            });
+
+            // Add buttons container if there are more alerts
+            if (data.hasMoreAlerts) {
+                const buttonsContainer = document.createElement('div');
+                buttonsContainer.className = 'flex gap-4 mt-4';
+
+                // Add "View All Alerts" button
+                const viewAllButton = document.createElement('button');
+                viewAllButton.className = 'flex-1 view-all-button';
+                viewAllButton.textContent = 'View All Alerts';
+                viewAllButton.onclick = () => {
+                    window.location.href = `detailed-alerts.html?scanId=${data.scanId}`;
+                };
+
+                // Add "Download PDF" button
+                const downloadButton = document.createElement('button');
+                downloadButton.className = 'flex-1 view-all-button';
+                downloadButton.innerHTML = '<i class="ri-download-line mr-2"></i>Download PDF';
+                downloadButton.onclick = () => {
+                    window.location.href = `/api/download-alerts/${data.scanId}`;
+                };
+
+                buttonsContainer.appendChild(viewAllButton);
+                buttonsContainer.appendChild(downloadButton);
+                alertsList.appendChild(buttonsContainer);
+            }
+          } else {
+            document.getElementById('alertsSection').classList.add('hidden');
+          }
+        } catch (error) {
+          console.error('Error fetching recent alerts:', error);
+        }
+      }
+
+      // Update the startScan function to refresh alerts after scan completion
+      async function pollScanStatus(scanId) {
+        try {
+          while (true) {
+            const response = await fetch(`/api/scan/${scanId}`);
+            if (!response.ok) {
+              throw new Error('Failed to fetch scan status');
+            }
+
+            const scan = await response.json();
+            
+            // Update progress bar and status text
+            const progressBar = document.getElementById('progressBar');
+            const progressPercent = document.getElementById('scanProgressPercent');
+            const scanStageText = document.getElementById('scanStageText');
+            const scanStatusText = document.getElementById('scanStatusText');
+            
+            const progress = scan.progress || 0;
+            progressBar.style.width = `${progress}%`;
+            progressPercent.textContent = `${progress}%`;
+            
+            // Update stage text with more detailed information
+            let stageText = scan.currentStage || 'Processing...';
+            if (scan.status === 'in-progress') {
+                scanStatusText.textContent = 'Scan in progress...';
+                if (progress < 25) {
+                    stageText = 'Initializing scan and configuring settings...';
+                } else if (progress < 50) {
+                    stageText = 'Spider scan in progress - mapping website structure...';
+                } else if (progress < 75) {
+                    stageText = 'Passive scan - analyzing responses...';
+                } else if (progress < 100) {
+                    stageText = 'Active scan - checking for vulnerabilities...';
+                }
+            }
+            scanStageText.textContent = stageText;
+            
+            if (scan.status === 'completed') {
+              document.getElementById('scanStatus').style.display = 'none';
+              // Fetch latest metrics and alerts
+              await Promise.all([
+                fetchDashboardMetrics(),
+                fetchRecentAlerts()
+              ]);
+              break;
+            } else if (scan.status === 'failed') {
+              document.getElementById('scanStatus').style.display = 'none';
+              document.getElementById('scanResults').innerHTML = `
+                <div class="error-message text-red-500">
+                  Scan failed. Please try again.
+                </div>
+              `;
+              break;
+            }
+
+            // Wait 2 seconds before next check
+            await new Promise(resolve => setTimeout(resolve, 2000));
+          }
+        } catch (error) {
+          console.error('Error polling scan status:', error);
+          document.getElementById('scanStatus').style.display = 'none';
+          document.getElementById('scanResults').innerHTML = `
+            <div class="error-message text-red-500">
+              Error checking scan status: ${error.message}
+            </div>
+          `;
+        }
+      }
+
+      // Call fetchRecentAlerts when the page loads
+      document.addEventListener('DOMContentLoaded', () => {
+        fetchUserData();
+        fetchRecentAlerts();
+      });
+    </script>
+    <script>
+      // Add function to fetch and update dashboard metrics
+      async function fetchDashboardMetrics() {
+        try {
+          const response = await fetch('/api/dashboard-metrics');
+          if (!response.ok) {
+            throw new Error('Failed to fetch dashboard metrics');
+          }
+
+          const data = await response.json();
+          
+          // Update metrics
+          document.getElementById('totalScans').textContent = data.totalScans;
+          document.getElementById('scanChange').textContent = data.scanChange;
+          document.getElementById('scanChange').className = 
+              data.scanChange === '0%' ? 'text-gray-500' : 
+              data.scanChange.startsWith('+') ? 'text-green-500' : 'text-red-500';
+          
+          // Update active threats
+          document.getElementById('activeThreats').textContent = data.activeThreats;
+          document.getElementById('threatStatus').textContent = data.threatStatus;
+          document.getElementById('threatStatus').className = 
+              data.threatStatus === 'Safe' ? 'text-green-500' : 'text-red-500';
+          document.getElementById('threatDetails').textContent = data.threatDetails;
+          
+          // Update system health
+          document.getElementById('systemHealth').textContent = 
+              data.systemHealth.score.toFixed(1) + '%';
+          document.getElementById('healthStatus').textContent = 
+              data.systemHealth.status;
+          document.getElementById('healthStatus').className = 
+              getHealthStatusClass(data.systemHealth.status);
+          document.getElementById('healthDetails').textContent = 
+              data.systemHealth.details;
+          
+          // Update total alerts
+          document.getElementById('totalAlerts').textContent = data.totalAlerts;
+          document.getElementById('alertDetails').textContent = data.alertsDetails;
+        } catch (error) {
+          console.error('Error fetching dashboard metrics:', error);
+        }
+      }
+
+      // Update the getHealthStatusClass function
+      function getHealthStatusClass(status) {
+        switch (status.toLowerCase()) {
+          case 'optimal':
+              return 'text-green-500';
+          case 'good':
+              return 'text-blue-500';
+          case 'fair':
+              return 'text-yellow-500';
+          case 'critical':
+              return 'text-red-500';
+          default:
+              return 'text-gray-500';
+        }
+      }
+
+      // Update the pollScanStatus function to refresh metrics after scan completion
+      async function pollScanStatus(scanId) {
+        try {
+          while (true) {
+            const response = await fetch(`/api/scan/${scanId}`);
+            if (!response.ok) {
+              throw new Error('Failed to fetch scan status');
+            }
+
+            const scan = await response.json();
+            
+            if (scan.status === 'completed') {
+              document.getElementById('scanStatus').style.display = 'none';
+              // Fetch latest metrics and alerts
+              await Promise.all([
+                fetchDashboardMetrics(),
+                fetchRecentAlerts()
+              ]);
+              break;
+            } else if (scan.status === 'failed') {
+              document.getElementById('scanStatus').style.display = 'none';
+              document.getElementById('scanResults').innerHTML = `
+                <div class="error-message text-red-500">
+                  Scan failed. Please try again.
+                </div>
+              `;
+              break;
+            }
+
+            // Wait 2 seconds before next check
+            await new Promise(resolve => setTimeout(resolve, 2000));
+          }
+        } catch (error) {
+          console.error('Error polling scan status:', error);
+          document.getElementById('scanStatus').style.display = 'none';
+          document.getElementById('scanResults').innerHTML = `
+            <div class="error-message text-red-500">
+              Error checking scan status: ${error.message}
+            </div>
+          `;
+        }
+      }
+
+      // Update the DOMContentLoaded event listener to include dashboard metrics
+      document.addEventListener('DOMContentLoaded', () => {
+        fetchUserData();
+        fetchRecentAlerts();
+        fetchDashboardMetrics();
+
+        // Refresh dashboard metrics every 30 seconds
+        setInterval(fetchDashboardMetrics, 30000);
+      });
+    </script>
+    <script>
+      // Add function to fetch and display security news
+      async function fetchSecurityNews() {
+        try {
+          const response = await fetch('/api/security-news');
+          if (!response.ok) {
+            throw new Error('Failed to fetch security news');
+          }
+
+          const articles = await response.json();
+          const newsContainer = document.getElementById('newsContainer');
+          newsContainer.innerHTML = '';
+
+          articles.forEach(article => {
+            const articleElement = document.createElement('div');
+            articleElement.className = 'bg-[#1E293B] rounded-lg overflow-hidden cursor-pointer transform transition-transform hover:scale-105';
+            articleElement.onclick = () => window.open(article.url, '_blank');
+            
+            articleElement.innerHTML = `
+              <div class="relative">
+                <img
+                  src="${article.imageUrl}"
+                  alt="${article.title}"
+                  class="w-full h-48 object-cover"
+                  onerror="this.src='https://via.placeholder.com/800x400?text=No+Image'"
+                />
+                <div class="absolute top-0 right-0 m-2">
+                  <span class="bg-blue-500 text-white text-xs px-2 py-1 rounded">News</span>
+                </div>
+              </div>
+              <div class="p-6">
+                <h3 class="text-lg font-semibold mb-2 line-clamp-2">
+                  ${article.title}
+                </h3>
+                <p class="text-gray-400 line-clamp-3">
+                  ${article.description || 'No description available'}
+                </p>
+              </div>
+            `;
+            
+            newsContainer.appendChild(articleElement);
+          });
+        } catch (error) {
+          console.error('Error fetching security news:', error);
+          const newsContainer = document.getElementById('newsContainer');
+          newsContainer.innerHTML = `
+            <div class="col-span-3 text-center text-gray-400">
+              Failed to load security news. Please try again later.
+            </div>
+          `;
+        }
+      }
+
+      // Update the DOMContentLoaded event listener to include news fetching
+      document.addEventListener('DOMContentLoaded', () => {
+        fetchUserData();
+        fetchRecentAlerts();
+        fetchDashboardMetrics();
+        fetchSecurityNews();
+
+        // Refresh dashboard metrics and news every 30 seconds
+        setInterval(() => {
+          fetchDashboardMetrics();
+          fetchSecurityNews();
+        }, 30000);
+      });
+    </script>
+    <script>
+      // Update the displayAlerts function
+      function displayAlerts(alerts) {
+        const alertsContainer = document.getElementById('alertsContainer');
+        alertsContainer.innerHTML = '';
+
+        // Sort alerts by severity (high > medium > low)
+        const sortedAlerts = alerts.sort((a, b) => {
+          const severityOrder = { 'High': 3, 'Medium': 2, 'Low': 1 };
+          return severityOrder[b.risk] - severityOrder[a.risk];
+        });
+
+        // Show only first 5 alerts
+        const alertsToShow = sortedAlerts.slice(0, 5);
+        
+        alertsToShow.forEach(alert => {
+          const alertDiv = document.createElement('div');
+          alertDiv.className = `alert ${alert.risk.toLowerCase()}`;
+          
+          alertDiv.innerHTML = `
+            <h3>${alert.name}</h3>
+            <p><strong>Risk Level:</strong> ${alert.risk}</p>
+            <p><strong>Description:</strong> ${alert.description}</p>
+            <p><strong>Solution:</strong> ${alert.solution}</p>
+            <p><strong>URL:</strong> ${alert.url}</p>
+          `;
+          
+          alertsContainer.appendChild(alertDiv);
+        });
+
+        // Add "View All Alerts" button if there are more than 5 alerts
+        if (alerts.length > 5) {
+          const viewAllButton = document.createElement('button');
+          viewAllButton.className = 'view-all-button';
+          viewAllButton.textContent = 'View All Alerts';
+          viewAllButton.onclick = () => {
+            window.location.href = `detailed-alerts.html?scanId=${currentScanId}`;
+          };
+          alertsContainer.appendChild(viewAllButton);
+        }
+      }
+
+      // Add CSS for the view all button
+      const style = document.createElement('style');
+      style.textContent = `
+        .view-all-button {
+          display: block;
+          margin: 20px auto;
+          padding: 10px 20px;
+          background-color: #007bff;
+          color: white;
+          border: none;
+          border-radius: 4px;
+          cursor: pointer;
+          font-size: 16px;
+        }
+        .view-all-button:hover {
+          background-color: #0056b3;
+        }
+      `;
+      document.head.appendChild(style);
+    </script>
+    <script>
+      // Add scroll to news function
+      function scrollToNews(event) {
+        event.preventDefault();
+        const newsSection = document.getElementById('newsSection');
+        newsSection.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      }
+    </script>
+    <script>
+      document.getElementById('refreshDashboardBtn').addEventListener('click', () => {
+        fetchDashboardMetrics();
+        fetchRecentAlerts();
+      });
+    </script>
+  </body>
+</html>

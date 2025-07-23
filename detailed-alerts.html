@@ -1,0 +1,175 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Detailed Alerts</title>
+    <link href="https://cdn.jsdelivr.net/npm/remixicon@4.5.0/fonts/remixicon.css" rel="stylesheet" />
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 20px;
+            background-color: #f5f5f5;
+        }
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            background-color: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        .alert {
+            margin-bottom: 20px;
+            padding: 15px;
+            border-radius: 4px;
+            border-left: 4px solid;
+        }
+        .high {
+            border-color: #dc3545;
+            background-color: #f8d7da;
+        }
+        .medium {
+            border-color: #ffc107;
+            background-color: #fff3cd;
+        }
+        .low {
+            border-color: #28a745;
+            background-color: #d4edda;
+        }
+        .alert h3 {
+            margin-top: 0;
+            color: #333;
+        }
+        .alert p {
+            margin: 10px 0;
+            color: #666;
+        }
+        .back-button {
+            display: inline-block;
+            padding: 10px 20px;
+            background-color: #007bff;
+            color: white;
+            text-decoration: none;
+            border-radius: 4px;
+            margin-bottom: 20px;
+        }
+        .back-button:hover {
+            background-color: #0056b3;
+        }
+        .scan-info {
+            margin-bottom: 20px;
+            padding: 10px;
+            background-color: #e9ecef;
+            border-radius: 4px;
+        }
+        .button-container {
+            display: flex;
+            gap: 1rem;
+            margin-bottom: 20px;
+        }
+        
+        .download-button {
+            display: inline-flex;
+            align-items: center;
+            padding: 10px 20px;
+            background-color: #28a745;
+            color: white;
+            text-decoration: none;
+            border-radius: 4px;
+            border: none;
+            cursor: pointer;
+            font-size: 16px;
+        }
+        
+        .download-button:hover {
+            background-color: #218838;
+        }
+        
+        .download-button i {
+            margin-right: 8px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="button-container">
+            <a href="cyber.html" class="back-button">← Back to Dashboard</a>
+            <button onclick="downloadPDF()" class="download-button">
+                <i class="ri-download-line"></i>Download PDF
+            </button>
+        </div>
+        <div class="scan-info">
+            <h2>Scan Details</h2>
+            <p id="scanUrl"></p>
+            <p id="scanDate"></p>
+            <p id="totalAlerts"></p>
+        </div>
+        <div id="alertsContainer"></div>
+    </div>
+
+    <script>
+        // Get scan ID from URL
+        const urlParams = new URLSearchParams(window.location.search);
+        const scanId = urlParams.get('scanId');
+
+        // Fetch detailed alerts
+        async function fetchDetailedAlerts() {
+            try {
+                const response = await fetch(`/api/detailed-alerts/${scanId}`, {
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    credentials: 'include'
+                });
+
+                if (!response.ok) {
+                    throw new Error('Failed to fetch alerts');
+                }
+
+                const data = await response.json();
+                
+                // Update scan info
+                document.getElementById('scanUrl').textContent = `URL: ${data.url}`;
+                document.getElementById('scanDate').textContent = `Scan Date: ${new Date(data.scanDate).toLocaleString()}`;
+                document.getElementById('totalAlerts').textContent = `Total Alerts: ${data.totalAlerts}`;
+
+                // Sort alerts by severity
+                const sortedAlerts = data.alerts.sort((a, b) => {
+                    const severityOrder = { 'High': 3, 'Medium': 2, 'Low': 1, 'Informational': 0 };
+                    return severityOrder[b.risk] - severityOrder[a.risk];
+                });
+
+                // Display alerts
+                const alertsContainer = document.getElementById('alertsContainer');
+                sortedAlerts.forEach(alert => {
+                    const alertDiv = document.createElement('div');
+                    alertDiv.className = `alert ${alert.risk.toLowerCase()}`;
+                    
+                    alertDiv.innerHTML = `
+                        <h3>${alert.name}</h3>
+                        <p><strong>Risk Level:</strong> ${alert.risk}</p>
+                        <p><strong>Description:</strong> ${alert.description}</p>
+                        <p><strong>Solution:</strong> ${alert.solution}</p>
+                        <p><strong>URL:</strong> ${alert.url}</p>
+                    `;
+                    
+                    alertsContainer.appendChild(alertDiv);
+                });
+            } catch (error) {
+                console.error('Error:', error);
+                alert('Failed to load alerts. Please try again.');
+            }
+        }
+
+        // Fetch alerts when page loads
+        fetchDetailedAlerts();
+
+        // Add download function
+        function downloadPDF() {
+            window.location.href = `/api/download-alerts/${scanId}`;
+        }
+    </script>
+</body>
+</html> 
