@@ -1,4 +1,4 @@
-# Cybersecurity_Incident_Resopnse_Assistant
+# Cybersecurity_Incident_Resopnse_Assistant 
 
 FalconCyber Scan is a comprehensive web security application that allows users to scan websites for vulnerabilities, view detailed scan reports, track scan history, and interact with an AI-powered security assistant for insights and recommendations.
 
